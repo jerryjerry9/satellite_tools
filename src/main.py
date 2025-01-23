@@ -6,6 +6,7 @@ lat = [-10, 50]
 lon = [90, 180]
 time_period = ['20190123','20190124']
 
+## --- add shao command ---
 
 himawari = Himawari.Himawari(work_path=path,data_path=d_path,lat_range=lat,lon_range=lon,time_period=time_period)
 #print(himawari.work_path)
