@@ -24,7 +24,7 @@ dependencies = [
 
 [tool.setuptools]
 packages = ["ael_satellite_tools", "ael_satellite_tools.preprocess"]
-include-package-data = true  
+include-package-data = true
 
 [tool.setuptools.package-data]
 "ael_satellite_tools.preprocess" = ["himawari_LUT/*"]
