@@ -1,3 +1,6 @@
-./data
+data
 *.pyc
 __pycache__
+ael_satellite_tools.egg-info
+build
+dist

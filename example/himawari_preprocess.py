@@ -1,7 +1,5 @@
 import sys
-sys.path.insert(0, "/home/C.shaoyu/work/satellite_tools")
 from ael_satellite_tools.preprocess import Himawari
-#from satellite_preprocess import Himawari
 
 
 ## prepare enviromnent
