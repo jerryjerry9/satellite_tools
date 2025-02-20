@@ -1,10 +1,9 @@
-import sys
 from ael_satellite_tools.preprocess import Himawari
 
 
 ## prepare enviromnent
 path = []
-data_path = '/data/C.shaoyu/satellite_tools_data/'
+data_path = '/data/cloud2025/temporary_data/'
 lat = [-10, 50]
 lon = [90, 180]
 
