@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ael_satellite_tools"
+version = "0.0.1"
+description = "This package can download and analysisze the satellite data."
+readme = "README.md"
+authors = [{ name = "testname", email = "email_account@ntu.edu.tw" },
+          ]
+license = { text = "MIT" }
+dependencies = [
+    "numpy",
+    "python3-wget",
+    "netcdf4"
+]
+
+[tool.setuptools]
+packages = ["ael_satellite_tools"]
+
+[tool.setuptools.package-data]
+"ael_satellite_tools.preproces" = ["himawari_LUT/*"]
+
+[project.urls]
+#Homepage = "https://github.com/yourusername/your_package"
+#Documentation = "https://readthedocs.org"
+Repository = "https://github.com/jerryjerry9/satellite_tools"
+
