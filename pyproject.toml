@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ael_satellite_tools"
+version = "0.0.1"
+description = "This module can dowinload and process satellite products"
+readme = "README.md"
+authors = [{ name = "name", email = "email_account@email.com" },
+          ]
+license = { text = "MIT" }
+dependencies = [
+    "numpy",
+    "scipy <= 1.12.0",
+    "matplotlib",
+    "netcdf4",
+    "glob2",
+    "wget",
+    "opencv-python",
+    "pyspectral",
+    "basemap",
+]
+
+[tool.setuptools]
+packages = ["ael_satellite_tools", "ael_satellite_tools.preprocess"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"ael_satellite_tools.preprocess" = ["himawari_LUT/*"]
+
+[project.urls]
+#Homepage = "https://github.com/yourusername/your_package"
+#Documentation = "https://readthedocs.org"
+Repository = "https://github.com/jerryjerry9/satellite_tools"
+

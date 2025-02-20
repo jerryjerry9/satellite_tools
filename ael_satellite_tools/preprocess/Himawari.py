@@ -1,20 +1,13 @@
 """
 satellite_tools.py
 
-This module provides functions downloading & pre-processing satellite products
+This module provides functions for downloading & pre-processing satellite products
 pre-processing may include extract sub-domain, re-grid, composite ...
 
-planning satellite product: Himawari, GPM-IMERG, CloudSat, FS7, ASCAT ...
+planning satellite product: Himawari, CloudSat, RO, ...
 
 """
-
-class Preparation:
-    def __init__(self,work_path,lat_range,lon_range,time_period):
-        self.work_path = work_path
-        self.lat_range = lat_range
-        self.lon_range = lon_range
-        self.time_period = time_period
-
+from ..satellite_general import Preparation
 
 class Data_group:
     def __init__(self,band_data):
@@ -22,7 +15,7 @@ class Data_group:
 
 
 class Himawari(Preparation):
-    def __init__(self,work_path=None,lat_range=[-10,50],lon_range=[90,180],time_period=['20150707'],data_path='/data/dadm1/obs/Himawari'):
+    def __init__(self,work_path=None,lat_range=[-10,50],lon_range=[90,180],time_period=['20150707'],data_path='/data/cloud2025/temporary_data'):
         super().__init__(work_path,lat_range,lon_range,time_period)
         self.data_path = data_path
 
@@ -39,10 +32,10 @@ class Himawari(Preparation):
 ###    generate time list from continious time range or specific time 
         time_list = self.generate_time_list(time_period=time_period,time_delta=time_delta,year=year,mon=mon,day=day,hour=hour,minn=minn)
 ###    generate data list for downloading data
-        file_list, zip_file_list, full_path_file_list = self.generate_data_list(time_list=time_list,band=band,band_num=band_num,geo=geo,band4km=band4km,separate_ori_4km=separate_ori_4km)
-        return (file_list, zip_file_list, full_path_file_list)
+        file_list, zip_file_list, ftp_path_file_list = self.generate_data_list(time_list=time_list,band=band,band_num=band_num,geo=geo,band4km=band4km,separate_ori_4km=separate_ori_4km)
+        return (file_list, zip_file_list, ftp_path_file_list)
 
-    def pre_process(self, full_path_file_list, remove_list_flag=True, download_flag=True):
+    def pre_process(self, ftp_path_file_list, remove_list_flag=True, download_flag=True):
         """
         Integrate all functions for pre-processing
         download data, sub-domain extraction, and generate nc files
@@ -54,9 +47,9 @@ class Himawari(Preparation):
         self.sub_domain_extract
         self.generate_nc
         """
-        full_path_file_list = self.check_exist_sub_domain_file(full_path_file_list,remove_list_flag=remove_list_flag)
+        ftp_path_file_list = self.check_exist_sub_domain_file(ftp_path_file_list,remove_list_flag=remove_list_flag)
 
-        for file_name in full_path_file_list:
+        for file_name in ftp_path_file_list:
 
             output_file_list = self.download(file_name, download_flag=download_flag)
             output_file_list, data_array = self.unzip(output_file_list)  
@@ -93,7 +86,7 @@ class Himawari(Preparation):
 ###  generating file list for download from FTP           
         file_list = []
         zip_file_list = [] 
-        full_path_file_list = []
+        ftp_path_file_list = []
 ###    time period
         for single_time in time_list:
             YYYY = single_time[0:4] 
@@ -105,13 +98,14 @@ class Himawari(Preparation):
             for CHN in band:
                         for NUM in band_num:
                             if CHN == 'VIS' and NUM > 3:
-                                break
+                                continue
                             elif CHN == 'SIR' and NUM > 2:
-                                break
+                                continue
                             elif CHN == 'EXT' and NUM > 1:
-                                break
+                                continue
+                            num = str(NUM)
                             if NUM < 10:
-                                num = '0'+str(NUM)  
+                                num = '0'+ num  
 ###    ori-resolution band data
                             if down_ori:
                                 file_name = [''+YYYY+''+MM+''+DD+''+HH+''+MN+'.'+CHN.lower()+'.'+num+'.fld.geoss']
@@ -119,7 +113,7 @@ class Himawari(Preparation):
                                 full_path_file = [''+self.__himawari_FTP+'/'+YYYY+MM+'/'+CHN+'/'+download_file[0]+'']
                                 file_list.append(file_name[0])
                                 zip_file_list.append(download_file[0])
-                                full_path_file_list.append(full_path_file[0])
+                                ftp_path_file_list.append(full_path_file[0])
                                 #print(''+self.__himawari_FTP+'/'+YYYY+MM+'/'+CHN+'/'+download_file[0]+'')
 ###    4km resolution band data
                             if down_4km:
@@ -131,7 +125,7 @@ class Himawari(Preparation):
                                         full_path_file = [''+geo_path+'/'+download_file[0]+'']
                                         file_list.append(file_name[0])
                                         zip_file_list.append(download_file[0])
-                                        full_path_file_list.append(full_path_file[0])
+                                        ftp_path_file_list.append(full_path_file[0])
                                         #print(full_path_file[0])
                                     if CHN == 'TIR' and (band_var == 'rad' or band_var == 'tbb'):
                                         file_name = [''+YYYY+''+MM+''+DD+''+HH+''+MN+'.'+CHN.lower()+'.'+num+'.'+band_var+'.fld.4km.bin']
@@ -139,7 +133,7 @@ class Himawari(Preparation):
                                         full_path_file = [''+geo_path+'/'+download_file[0]+'']
                                         file_list.append(file_name[0])
                                         zip_file_list.append(download_file[0])
-                                        full_path_file_list.append(full_path_file[0])
+                                        ftp_path_file_list.append(full_path_file[0])
                                         #print(full_path_file[0])
 ###    4km resolution geo-info data for RGB images adjustment
             if geo_info:    
@@ -154,16 +148,19 @@ class Himawari(Preparation):
                             #print(full_path_file[0])
                             file_list.append(file_name[0])
                             zip_file_list.append(download_file[0])
-                            full_path_file_list.append(full_path_file[0])
-        return(file_list, zip_file_list, full_path_file_list) 
+                            ftp_path_file_list.append(full_path_file[0])
+        return(file_list, zip_file_list, ftp_path_file_list) 
 
-    def check_exist_sub_domain_file(self,full_path_file_list,remove_list_flag=True):
+    def check_exist_sub_domain_file(self,ftp_path_file_list,remove_list_flag=True,extend_lonlat_range=True):
         import glob
-        import netCDF4 as nc
-        full_path_file_list = self.check_list(full_path_file_list)
-        print('File numbers from generated list:',len(full_path_file_list))
+        ftp_path_file_list = self.check_list(ftp_path_file_list)
+        print('File numbers from generated list:',len(ftp_path_file_list))
         print('Check pre-processed sub-domain nc files...')
-        for file_name in full_path_file_list:
+        if extend_lonlat_range == True:
+            print('lon lat range will combine the nc file range & self-defined range')
+        if extend_lonlat_range == False:
+            print('lon lat range will use self-defined range')
+        for file_name in ftp_path_file_list:
             split_name = file_name.split('/')
             zip_file = split_name[-1]
             band_date, band, band_num  = self.name_info(file_name,convert2tbb=True)
@@ -173,29 +170,28 @@ class Himawari(Preparation):
 
             array_shape = self.band_array(band)
             nc_info = self.nc_file_info(file_name)
-            lon_idx,lat_idx,local_lon,local_lat = self.lonlat_index(self.lon_range, self.lat_range, array_shape)
             unchecked_file = sorted(glob.glob(''+nc_data_path+'/'+nc_info[0]+'.nc'))
             if len(unchecked_file)>0 and remove_list_flag:
-                nc_re = nc.Dataset(unchecked_file[0], 'r',  format='NETCDF4_CLASSIC')
-                nclon_s = nc_re.variables['lon'][0]
-                nclon_e = nc_re.variables['lon'][-1]
-                nclat_s = nc_re.variables['lat'][0]
-                nclat_e = nc_re.variables['lat'][-1]
-                if local_lon[0] >= nclon_s and local_lon[-1] <= nclon_e:
-                    if local_lat[0] >= nclat_s and local_lat[-1] <= nclat_e:
-                        print('Data:',zip_file)
-                        print('Already pre-processed to nc file')
-                        print('Remove file name from file list')
-                        full_path_file_list = list(filter(lambda x: file_name not in x, full_path_file_list)) 
-        print('File numbers for downloading:',len(full_path_file_list))
-        return(full_path_file_list) 
+                domain_flag,nc_lon_range,nc_lat_range = self.read_nc_boundary(unchecked_file,self.lon_range,self.lat_range, array_shape)
+                if domain_flag == True:
+                    print('Data:',zip_file)
+                    print('Already pre-processed to nc file')
+                    print('Remove file name from file list')
+                    ftp_path_file_list = list(filter(lambda x: file_name not in x, ftp_path_file_list)) 
+                else:
+                    if extend_lonlat_range:
+                        new_lon_range, new_lat_range = self.extend_lonlat(nc_lon_range,nc_lat_range)
+                        self.lon_range = new_lon_range
+                        self.lat_range = new_lat_range
+        print('File numbers for downloading:',len(ftp_path_file_list))
+        return(ftp_path_file_list) 
 
-    def download(self,full_path_file_list,download_flag=True):
+    def download(self,ftp_path_file_list,download_flag=True):
         import os
         import glob
         import wget
 ###    generate list if the input is string
-        file_path = self.check_list(full_path_file_list)
+        file_path = self.check_list(ftp_path_file_list)
         print('Downloading...')
         for download_file in file_path:
 ###    collect file information
@@ -316,15 +312,7 @@ class Himawari(Preparation):
             else:
 ###    LUT for converting count to tbb(albedo)
                 print('Converting digits into Albedo or TBB')
-                band_date = int(band_date)
-                if band_date > 202212130449:
-                    LUT_file = ['himawari_preparation/'+band+'.'+band_num+'.H09']
-                elif band_date > 201802130249 and band_date < 201802140710:
-                    LUT_file = ['himawari_preparation/'+band+'.'+band_num+'.H09']
-                else:
-                    LUT_file = ['himawari_preparation/'+band+'.'+band_num+'.H08']
-            #print(LUT_file[0])
-                LUT = np.loadtxt(LUT_file[0])
+                LUT = self.load_LUT(band_date,band,band_num)
 ###    convert main process
                 data_array = np_binary_array[num]
                 valid_indices = (data_array >= 0) & (data_array < LUT.shape[0])
@@ -347,7 +335,7 @@ class Himawari(Preparation):
             band_data = output_band_tbb[i]
             array_shape = band_data.shape
             #scale_factor = int(24000/array_shape[0])
-            lon_idx,lat_idx,local_lon,local_lat = self.lonlat_index(self.lon_range,self.lat_range,array_shape[0])
+            lon_idx,lat_idx,local_lon,local_lat = self.lonlat_index(self.lon_range,self.lat_range,array_shape=array_shape[0])
             r_band_data = band_data[::-1]
             output_band_data = r_band_data[lat_idx[0]:lat_idx[1],lon_idx[0]:lon_idx[1]]
             sub_domain_band_tbb.append(output_band_data)
@@ -491,63 +479,6 @@ class Himawari(Preparation):
             #print(dtype)
             array_shape = self.band_array(band)
         return(dtype,array_shape)
- 
-    def check_list(self,unchecked_var):
-        if isinstance(unchecked_var, str):
-            unchecked_var = [unchecked_var]
-        return(unchecked_var)
-
-    def check_data_list(self,unchecked_array):
-        if isinstance(unchecked_array, list):
-            unchecked_array = unchecked_array
-        else:
-            unchecked_array = [unchecked_array]
-        return(unchecked_array)
-
-    def string_info(self, binary_info=False, band_info=False, band_num_info=False,nc_info=False,nc_4km_info=False,nc_4km_var_info=False,time_info=False):
-###
-        binary_types = ['geoss', 'bin', 'dat']
-        band_types = ['4km','cap', 'ext', 'vis', 'sir', 'tir']
-        band_num_types = ['4km','cap', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10']
-###    for nc file info
-        band_table = ['ext01','vis01','vis02','vis03','sir01','sir02','tir01','tir02',
-                      'tir03','tir04','tir05','tir06','tir07','tir08','tir09','tir10']
-        AHI_band_num_table = ['03','01','02','04','05','06','13','14',
-                              '15','16','07','08','09','10','11','12']
-        data_type_table_4km = ['sun','sat','lat','lng','grd','cap','rad','rfc','rfy','tbb']
-        angle_types = ['azm','zth']
-###    for 4km nc var info
-        nc_data_type_table_4km = ['sun_azm','sun_zth','sat_azm','sat_zth','lat','lng',
-                                  'grd_time_mjd_hms','cap_flg','rad','rfc','rfy','tbb']
-        var_name_table = ['sun_azm','sun_zth','sat_azm','sat_zth','latt','lng',
-                          'grd_time_mjd_hms','cap_flg','rad','rfc','rfy','tbb']
-        long_name_table = ['Solar azimuth angle (South direction is zero, clockwise rotation)', 
-                           'Solar zenith angle', 
-                           'Sensor azimuth angle (South direction is zero, clockwise rotation)', 
-                           'Sensor zenith angle','Latitude','Longitude', 
-                           'Scanning time（Normalized 0 to 1, i.e., 12:00 UTC is 0.5)', 
-                           'Cloud flag (Daytime and over ocean only. More than 1 represents cloud)', 
-                           'irradiance','spectral reflectance', 
-                           'spectral reflectance','brightness temperature']
-        units_table = ['degree','degree','degree','degree','degree','degree',
-                       'None','None','W m-2 sr-1 μm-1','None','%','K']
-        missing_value_table = [-99.0,-99.0,-99.0,-99.0,-99.0,-99.0,
-                               -99.0,-99.0,-99.0,-99.0,-99.0,-99.0]
-        time_types = ['days','hours','minutes']
-        if binary_info:
-            return(binary_types)
-        if band_info:
-            return(band_types)
-        if band_num_info:
-            return(band_num_types)
-        if nc_info:
-            return(band_table, AHI_band_num_table)
-        if nc_4km_info:
-            return(band_table, AHI_band_num_table, data_type_table_4km, angle_types)
-        if nc_4km_var_info:
-            return(nc_data_type_table_4km,var_name_table,long_name_table,units_table,missing_value_table)
-        if time_info:
-            return(time_types)
 
     def nc_file_info(self, output_file_name):
 ###    name rule of nc file (band data & 4km data)
@@ -613,191 +544,17 @@ class Himawari(Preparation):
                 missing_value = missing_value_table[pos_idx]
         return(output_name, band_date, var_name, long_name, units, missing_value)
 
-    def lonlat_index(self, lon_range, lat_range, array_shape):
+    def load_LUT(self,band_date,band,band_num):
+        from pathlib import Path
         import numpy as np
-        x = np.arange(850024,2050024,50)/10000
-        y = np.arange(-599976,600024,50)/10000
-##
-        ta = lon_range[0]
-        diff = np.abs(x-ta)
-        index = np.argmin(diff)
-        x_dis_bot = np.mod(index,8)
-###    lon array start
-        lon_s = index - x_dis_bot
-
-        ta = lon_range[1]
-        diff = np.abs(x-ta)
-        index = np.argmin(diff)
-        x_dis_top = np.mod(index,8)
-###    lon array end
-        if x_dis_top > 0.5:
-            lon_e = index + (8 - x_dis_top)
+        current_dir = Path(__file__).parent
+        lookup_path = str(current_dir / 'himawari_LUT')
+        band_date = int(band_date)
+        if band_date > 202212130449:
+            LUT_file = [''+lookup_path+'/'+band+'.'+band_num+'.H09']
+        elif band_date > 201802130249 and band_date < 201802140710:
+            LUT_file = [''+lookup_path+'/'+band+'.'+band_num+'.H09']
         else:
-            lon_e = index
-##
-        ta = lat_range[0]
-        diff = np.abs(y-ta)
-        index = np.argmin(diff)
-        y_dis_bot = np.mod(index,8)
-###    lat array start
-        lat_s = index - y_dis_bot
-
-        ta = lat_range[1]
-        diff = np.abs(y-ta)
-        index = np.argmin(diff)
-        y_dis_top = np.mod(index,8)
-###    lat array end
-        if y_dis_top > 0.5:
-            lat_e = index + (8 - y_dis_top)
-        else:
-            lat_e = index
-        scale_factor = int(24000/array_shape)
-        resol = 50*scale_factor
-        center = resol/2
-        xx = np.arange(850000+center,2050000+center,resol)/10000
-        yy = np.arange(-600000+center,600000+center,resol)/10000
-#        print('lon',xx[0],xx[-1])
-#        print('lat',yy[0],yy[-1])
-
-        lon_idx = [int(lon_s/scale_factor),int(lon_e/scale_factor)]
-        lat_idx = [int(lat_s/scale_factor),int(lat_e/scale_factor)]
-#  print(lon_idx[0],lon_idx[1])
-#  print(lat_idx[0],lat_idx[1])
-        local_lon=xx[lon_idx[0]:lon_idx[1]]
-        local_lat=yy[lat_idx[0]:lat_idx[1]]
-#        print(local_lon[0],local_lon[-1])
-#        print(local_lat[0],local_lat[-1])
-        return(lon_idx,lat_idx,local_lon,local_lat)
-
-    def information(self, detail=False):
-        self.detail = detail
-        print('Himawari-8 data strat from 2015/07/07 0200UTC.')
-        print('Full disk covered area: 85E – 205E (155W), 60N – 60S')
-        print('')
-        print('Band data & geo-info data that can be downloaded')
-        print('-------------------------------------------------------')
-        print('[EXT] 01:Band03')
-        print('[VIS] 01:Band01 02:Band02 03:Band04')
-        print('[SIR] 01:Band05 02:Band06')
-        print('[TIR] 01:Band13 02:Band14 03:Band15 04:Band16 05:Band07')
-        print('      06:Band08 07:Band09 08:Band10 09:Band11 10:Band12')
-        print('[GEO] Solar azimuth angle(sun.azm) Solar zenith angle(sun.zth)')
-        print('      Sensor azimuth angle(sat.azm) Sensor zenith angle(sat.zth)')
-        print('-------------------------------------------------------')
-        print('')
-        print('Download period & data template')
-        print('-------------------------------------------------------')
-        print('year = [\'2015\']               # Year:   from 2015')
-        print('mon  = [\'07\',\'09\']            # Month:  01 02 ... 12')
-        print('day  = [\'07\']                 # Day:    01 02 ... 30 31')
-        print('hour = [\'02\']                 # Hour:   00 01 ... 23')
-        print('minn = [\'00\']                 # Minute: 00 10 20 30 40 50')
-        print('Set band type')
-        print('band = ['+'EXT'+', '+'VIS'+', '+'SIR'+', '+'TIR'+']   # band: VIS TIR SIR EXT')
-        print('band_num = ['+'1,2,3'+']            # band number: 1 2 ... 10')
-        print('geo = [\'sun.azm\', \'sun.zth\']  # geo-info: sun.azm sun.zth sat.azm sat.zth ...')
-        print('-------------------------------------------------------')
-        print('You don\'t need to download a continuous time interval.')
-        print('Instead, you can choose a customized time resolution based on your research purpose:')
-        print('Such as one entry per hour, one entry per day, ... or even one entry per year.')
-        print('-------------------------------------------------------')
-        print('')
-        print('[EXT], [VIS], [SIR]: albedo [%]; [TIR]: brightness temperature [K]')
-        print('')
-        print('[EXT] Resolution: 0.005 degree;   array_size: (24000,24000)')
-        print('[VIS] Resolution: 0.01 degree;    array_size: (12000,12000)')
-        print('[SIR] Resolution: 0.02 degree;    array_size: (6000,6000)')
-        print('[TIR] Resolution: 0.02 degree;    array_size: (6000,6000)')
-        print('[GEO] Resolution: 0.04 degree;    array_size: (3000,3000)')
-        print('')
-        print('Reference: http://www.cr.chiba-u.jp/databases/GEO/H8_9/FD/index.html')
-        if detail:
-            print('')
-            print('Extra information')
-            print('-------------------------------------------------------')
-            print('GrADS control file lat lon format')
-            print('[EXT]')
-            print('xdef 24000 linear 85.0025  0.005')
-            print('ydef 24000 linear -59.9975 0.005')
-            print('[VIS]')
-            print('xdef 12000 linear 85.005  0.01')
-            print('ydef 12000 linear -59.995 0.01')
-            print('[SIR] & [TIR]')
-            print('xdef 6000 linear 85.01  0.02')
-            print('ydef 6000 linear -59.99 0.02')
-            print('[GEO]')
-            print('xdef 3000 linear 85.02  0.04')
-            print('ydef 3000 linear -59.98 0.04')
-            print('')
-            print('-------------------------------------------------------')
-            print('Full geometries dataset include:')
-            print('[GEO]')
-            print('Solar azimuth angle(sun.azm) Solar zenith angle(sun.zth)')
-            print('Sensor azimuth angle(sat.azm) Sensor zenith angle(sat.zth)')
-            print('Latitude(lat) Longitude(lng)')
-            print('Scanning time(grd.time.mjd.hms) Cloud flag(cap)')
-            print('')
-            print('All band data also provide 0.04degree(4km) resolution physical variables converted data:')
-            print('[BAND]')
-            print('YYYYMMDDHHMN.xxx.ZZ.rad.fld.4km.bin.bz2 (xxx: ext, vis, sir, tir; ZZ: CEReS gridded data band number) ')
-            print('ext, vis, sir, tir irradiance (unit: W m-2 sr-1 μm-1) ')
-            print('YYYYMMDDHHMN.xxx.ZZ.rfc.fld.4km.bin.bz2 (xxx: ext, vis, sir; ZZ: CEReS gridded data band number) ')
-            print('ext, vis, sir spectral reflectance (dimensionless) ')
-            print('YYYYMMDDHHMN.xxx.ZZ.rfy.fld.4km.bin.bz2 (xxx: ext, vis, sir; ZZ: CEReS gridded data band number) ')
-            print('ext, vis, sir spectral reflectance (%)')
-            print('YYYYMMDDHHMN.tir.ZZ.tbb.fld.4km.bin.bz2 (ZZ: CEReS gridded data band number) ')
-            print('tir (only) brightness temperature (Tbb (K)) ')
-            print('-------------------------------------------------------')
-
-    def generate_time_list(self,time_period=[],time_delta=[],year=[],mon=[],day=[],hour=[],minn=[]):
-        self.year = year
-        self.mon  = mon
-        self.day  = day
-        self.hour = hour
-        self.minn = minn
-      
-###  two types for generating the time list
-###  one for continious time range; the other for specific time
-        time_list = [] 
-###  continious time range
-        if len(time_period) > 0:
-            self.time_period = time_period
-            from datetime import datetime, timedelta
-            time_types = self.string_info(time_info=True)
-            date_1 = time_period[0]
-            date_2 = time_period[1]
-            s_date = datetime(int(date_1[0:4]),int(date_1[4:6]),int(date_1[6:8]))
-            e_date = datetime(int(date_2[0:4]),int(date_2[4:6]),int(date_2[6:8]))
-            delta_value = [0,0,0]
-            num = 0
-            for t_type in time_types:
-                for time_part in time_delta:
-                    split_parts = time_part.split('=')
-                    if t_type in split_parts:
-                        delta_value[num] = int(split_parts[1])
-                num = num + 1
-            delta = timedelta(days=delta_value[0],hours=delta_value[1],minutes=delta_value[2])
-            time_range = []
-            if sum(delta_value)>0:
-                while s_date <= e_date:
-                    time_range.append(s_date)
-                    s_date += delta
-            else:
-                time_range.append(s_date)
-
-            for date in time_range:
-                str_date = str(date)
-                time = str_date[0:4] + str_date[5:7] + str_date[8:10] + str_date[11:13] + str_date[14:16]
-                time_list.append(time)
-
-###  specific time
-        else:
-          for YYYY in year:
-            for MM in mon:
-              for DD in day:
-                for HH in hour:
-                  for MN in minn:
-                    time = YYYY + MM + DD + HH + MN
-                    time_list.append(time) 
-###
-        return(time_list)
+            LUT_file = [''+lookup_path+'/'+band+'.'+band_num+'.H08']
+        LUT = np.loadtxt(LUT_file[0])
+        return(LUT)
