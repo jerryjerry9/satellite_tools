@@ -7,7 +7,7 @@ name = "ael_satellite_tools"
 version = "0.0.1"
 description = "This module can dowinload and process satellite products"
 readme = "README.md"
-authors = [{ name = "name", email = "email_account@ntu.edu.tw" },
+authors = [{ name = "name", email = "email_account@email.com" },
           ]
 license = { text = "MIT" }
 dependencies = [
