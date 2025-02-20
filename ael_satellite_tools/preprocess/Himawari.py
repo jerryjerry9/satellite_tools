@@ -7,7 +7,7 @@ pre-processing may include extract sub-domain, re-grid, composite ...
 planning satellite product: Himawari, CloudSat, RO, ...
 
 """
-from satellite_preprocess.satellite_general import Preparation
+from ..satellite_general import Preparation
 
 class Data_group:
     def __init__(self,band_data):

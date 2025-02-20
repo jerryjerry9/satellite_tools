@@ -5,15 +5,21 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ael_satellite_tools"
 version = "0.0.1"
-description = "This package can download and analysisze the satellite data."
+description = "This module can dowinload and process satellite products"
 readme = "README.md"
-authors = [{ name = "testname", email = "email_account@ntu.edu.tw" },
+authors = [{ name = "name", email = "email_account@ntu.edu.tw" },
           ]
 license = { text = "MIT" }
 dependencies = [
     "numpy",
-    "python3-wget",
-    "netcdf4"
+    "scipy <= 1.12.0",
+    "matplotlib",
+    "netcdf4",
+    "glob2",
+    "wget",
+    "opencv-python",
+    "pyspectral",
+    "basemap",
 ]
 
 [tool.setuptools]

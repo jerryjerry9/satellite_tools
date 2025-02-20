@@ -1,12 +1,16 @@
-from satellite_preprocess import Himawari
+import sys
+sys.path.insert(0, "/home/C.shaoyu/work/satellite_tools")
+from ael_satellite_tools.preprocess import Himawari
+#from satellite_preprocess import Himawari
+
 
 ## prepare enviromnent
 path = []
-data_path = '/data/C.jerryjerry9/satellite_tools/data/Himawari'
+data_path = '/data/C.shaoyu/satellite_tools_data/'
 lat = [-10, 50]
 lon = [90, 180]
 
-himawari = Himawari.Himawari(work_path=path,data_path=data_path,lat_range=lat,lon_range=lon)
+himawari = Himawari(work_path=path,data_path=data_path,lat_range=lat,lon_range=lon)
 print(himawari.work_path)
 print(himawari.lat_range)
 print(himawari.lon_range)
