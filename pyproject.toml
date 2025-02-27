@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ael_satellite_tools"
-version = "0.0.1"
+version = "0.0.2"
 description = "This module can dowinload and process satellite products"
 readme = "README.md"
 authors = [{ name = "name", email = "email_account@email.com" },
@@ -23,7 +23,10 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["ael_satellite_tools", "ael_satellite_tools.preprocess"]
+packages = ["ael_satellite_tools",
+            "ael_satellite_tools.preprocess",
+            "ael_satellite_tools.plotting",
+           ]
 include-package-data = true
 
 [tool.setuptools.package-data]
