@@ -9,6 +9,7 @@ planning satellite product: Himawari, CloudSat, RO, ...
 """
 from ..satellite_general import Preparation
 
+
 class Data_group:
     def __init__(self,band_data):
         self.band_data = band_data
@@ -105,7 +106,7 @@ class Himawari(Preparation):
                                 continue
                             num = str(NUM)
                             if NUM < 10:
-                                num = '0'+ num  
+                                num = '0'+ num
 ###    ori-resolution band data
                             if down_ori:
                                 file_name = [''+YYYY+''+MM+''+DD+''+HH+''+MN+'.'+CHN.lower()+'.'+num+'.fld.geoss']
@@ -265,7 +266,7 @@ class Himawari(Preparation):
                 output.close()             
             num = num + 1
 
-    def read_binary(self,file_name,data_array=[],binary_type=[]):
+    def read_binary(self,file_name,data_array=[],binary_type=[],band=[]):
         import numpy as np
 ###    generate list if the input is string (or data_array is not a list)
         file_name = self.check_list(file_name)
@@ -278,7 +279,7 @@ class Himawari(Preparation):
             print('Loading data from memory')
             for output_file_name in file_name:
                 #print(output_file_name)
-                d_type, array_shape = self.binary_data_info(output_file_name, binary_type)
+                d_type, array_shape = self.binary_data_info(output_file_name, binary_type, band)
                 binary_data = np.frombuffer(data_array[num],dtype=d_type).reshape(array_shape,array_shape)
                 np_binary_data.append(binary_data)
                 num = num + 1
@@ -289,7 +290,7 @@ class Himawari(Preparation):
             print('Loading data from binary')
             for output_file_name in file_name:
                 #print(output_file_name)
-                d_type, array_shape = self.binary_data_info(output_file_name, binary_type)
+                d_type, array_shape = self.binary_data_info(output_file_name, binary_type, band)
                 binary_data = np.fromfile(''+self.data_path+'/'+output_file_name+'',dtype=d_type).reshape(array_shape,array_shape)
                 np_binary_data.append(binary_data)
                 num = num + 1
@@ -459,7 +460,7 @@ class Himawari(Preparation):
             array_shape = 3000
         return(array_shape)
 
-    def binary_data_info(self, output_file_name, binary_type):
+    def binary_data_info(self, output_file_name, binary_type, band):
         if len(binary_type) < 1:
             binary_type, band = self.name_info(output_file_name,read_binary=True)
             #print(binary_type)

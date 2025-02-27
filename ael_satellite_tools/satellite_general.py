@@ -20,17 +20,17 @@ class Preparation:
         self.minn = minn
 
 ###  two types for generating the time list
-###  one for continious time range; the other for specific time
+###  one for continuous time range; the other for specific time
         time_list = []
-###  continious time range
+###  continuous time range
         if len(time_period) > 0:
             self.time_period = time_period
             from datetime import datetime, timedelta
             time_types = self.string_info(time_info=True)
             date_1 = time_period[0]
             date_2 = time_period[1]
-            s_date = datetime(int(date_1[0:4]),int(date_1[4:6]),int(date_1[6:8]))
-            e_date = datetime(int(date_2[0:4]),int(date_2[4:6]),int(date_2[6:8]))
+            s_date = datetime(int(date_1[0:4]),int(date_1[4:6]),int(date_1[6:8]),int(date_1[8:10]),int(date_1[10:12]))
+            e_date = datetime(int(date_2[0:4]),int(date_2[4:6]),int(date_2[6:8]),int(date_1[8:10]),int(date_1[10:12]))
             delta_value = [0,0,0]
             num = 0
             for t_type in time_types:
