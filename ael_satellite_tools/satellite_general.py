@@ -5,14 +5,35 @@ This module provides general functions for satellite associated modules
 
 """
 
+
 class Preparation:
     def __init__(self,work_path,lat_range,lon_range,time_period):
+        """
+        Initialize Preparation class
+
+        Args:
+            work_path (str): Working directory path
+            lat_range (list): Latitude range
+            lon_range (list): Longitude range
+            time_period (list): Time range
+        """
         self.work_path = work_path
         self.lat_range = lat_range
         self.lon_range = lon_range
         self.time_period = time_period
 
     def generate_time_list(self,time_period=[],time_delta=[],year=[],mon=[],day=[],hour=[],minn=[]):
+        """
+        Generate time list by two ways
+
+        Args:
+          time_period (list): Start time and end time.
+          tume_delta (list): Time step.
+          year, mon, day, hour, minn (list): Specific timestamp arrays.
+
+        Returns:
+          total time list
+        """
         self.year = year
         self.mon  = mon
         self.day  = day
@@ -30,7 +51,8 @@ class Preparation:
             date_1 = time_period[0]
             date_2 = time_period[1]
             s_date = datetime(int(date_1[0:4]),int(date_1[4:6]),int(date_1[6:8]),int(date_1[8:10]),int(date_1[10:12]))
-            e_date = datetime(int(date_2[0:4]),int(date_2[4:6]),int(date_2[6:8]),int(date_1[8:10]),int(date_1[10:12]))
+            e_date = datetime(int(date_2[0:4]),int(date_2[4:6]),int(date_2[6:8]),int(date_2[8:10]),int(date_2[10:12]))
+            #print(s_date,e_date)
             delta_value = [0,0,0]
             num = 0
             for t_type in time_types:
@@ -41,6 +63,7 @@ class Preparation:
                 num = num + 1
             delta = timedelta(days=delta_value[0],hours=delta_value[1],minutes=delta_value[2])
             time_range = []
+            #print(delta_value)
             if sum(delta_value)>0:
                 while s_date <= e_date:
                     time_range.append(s_date)
@@ -346,4 +369,226 @@ class Preparation:
             print('YYYYMMDDHHMN.tir.ZZ.tbb.fld.4km.bin.bz2 (ZZ: CEReS gridded data band number) ')
             print('tir (only) brightness temperature (Tbb (K)) ')
             print('-------------------------------------------------------')
+
+    """
+    CloudSat general function
+    """
+    def generate_period(self,year_list, ju_day_list, start_end_hour_list):
+        year_list = self.check_list(year_list)
+        ju_day_list = self.check_list(ju_day_list)
+        start_end_hour_list = self.check_list(start_end_hour_list)
+        search_period = []
+        for yy in range(0,len(year_list)):
+            order = 0
+            limit = len(ju_day_list[yy])
+            ju_day = ju_day_list[yy]
+            hour = start_end_hour_list[yy]
+            #print(limit)
+            for dd in range(0,len(ju_day)):
+                file_d = str(ju_day[dd])
+                if ju_day[dd] < 100:
+                    file_d = '0' + file_d
+                if ju_day[dd] < 10:
+                    file_d = '0' + file_d
+###  end time
+                end_hours = []
+                if order == limit-1:
+                    if order == 0:
+                        if int(hour[0]) == 0 and int(hour[1]) > 23:
+                            target_time = [str(year_list[yy]) + file_d]
+                            #print(target_time)
+                            search_period.extend(target_time)
+                        else:
+                            end_hours = list(range(int(hour[0]),int(hour[1])))
+                    else:
+                        if int(hour[1]) > 23:
+                            target_time = [str(year_list[yy]) + file_d]
+                            #print(target_time)
+                            search_period.extend(target_time)
+                        else:
+
+                            end_hours = list(range(0,int(hour[1])))
+                    if len(end_hours) > 0:
+                        for single_hour in end_hours:
+                            file_h = str(single_hour)
+                            if single_hour < 10:
+                                file_h = '0' + file_h
+                            target_time = [str(year_list[yy]) + file_d + file_h]
+                            #print(target_time)
+                            search_period.extend(target_time)
+### start time
+                elif order == 0 and int(hour[0]) > 0:
+                    end_hours = list(range(int(hour[0]),24))
+                    if len(end_hours) > 0:
+                        for single_hour in end_hours:
+                            file_h = str(single_hour)
+                            if single_hour < 10:
+                                 file_h = '0' + file_h
+                            target_time = [str(year_list[yy]) + file_d + file_h]
+                            #print(target_time)
+                            search_period.extend(target_time)
+### normal condition
+                else:
+                    target_time = [str(year_list[yy]) + file_d]
+                    #print(target_time[0])
+                    search_period.extend(target_time)
+###
+                order = order + 1
+        return(search_period)
+
+    def convert_input_period(self,time_period):
+        time_period = self.check_list(time_period)
+        year = []
+        start_end_hour = []
+        year.append(time_period[0][0:4])
+        t1 = [time_period[0][8:10],time_period[1][8:10]]
+        if year[0] != time_period[1][0:4]:
+            year.append(time_period[1][0:4])
+        total_period = []
+        if len(year) > 1:
+            period1 = [time_period[0],year[0]+'12312400']
+            period2 = [year[0]+'01010000',time_period[1]]
+            total_period.append(period1)
+            total_period.append(period2)
+        else:
+            total_period.append(time_period)
+        ju_day = []
+        for period in total_period:
+            t1_t2 = [period[0][8:10],period[1][8:10]]
+            print(period[0],period[1])
+            start_end_hour.append(t1_t2)
+            ju_day.append(self.julian_time_range(period))
+        return(year, ju_day, start_end_hour)
+
+    def julian_time_range(self,time_period):
+        from datetime import datetime
+        time_period = self.check_list(time_period)
+        ju_day = []
+        for time in time_period:
+            year = int(time[0:4])
+            mon = int(time[4:6])
+            day = int(time[6:8])
+            date = datetime(year, mon, day)
+            ju = date.timetuple().tm_yday
+            ju_day.append(ju)
+        ju_list = list(range(ju_day[0],ju_day[1]+1))
+        return(ju_list)
+   
+    """
+    Object Identify
+    """ 
+    def obejct_identify(self,examining_array,threshold):
+        import numpy as np   
+        examining_array = np.array(examining_array) 
+### output array shape
+        ori_arraysize = examining_array.shape
+### extend 1D or 2D array into 3D 
+        if examining_array.ndim == 1:
+            examining_array = np.expand_dims(examining_array, axis=0)
+            examining_array = np.expand_dims(examining_array, axis=0)
+        elif examining_array.ndim == 2:
+            examining_array = np.expand_dims(examining_array, axis=0)      
+### object detection
+        arraysize = examining_array.shape
+        size_mask = np.zeros(arraysize)
+        size_num = np.zeros(arraysize)
+        obj_num = 1
+        for i in range(0, arraysize[0]):
+            for j in range(0, arraysize[1]):
+                for k in range(0, arraysize[2]):
+                    if size_mask[i,j,k]<1 and examining_array[i,j,k] >= threshold:
+                        vertical_su, lat_su, lon_su, grid_su = \
+                        self.surround_array(i,j,k,arraysize)
+                        checked_grid = [[i,j,k]]
+                        size_mask[i,j,k] = 1
+                        cal_size = 1
+                        checked_grid,size_mask,size_num = \
+                        self.six_way_connect(examining_array,threshold,
+                                             checked_grid,size_mask,size_num,obj_num,
+                                             vertical_su,lat_su,lon_su,grid_su,
+                                             arraysize,cal_size)
+                        obj_num = obj_num+1
+### output ori-array size
+        if len(ori_arraysize) == 1:
+            size_mask = np.squeeze(size_mask, axis=0)
+            size_mask = np.squeeze(size_mask, axis=0)
+            size_num = np.squeeze(size_num, axis=0)
+            size_num = np.squeeze(size_num, axis=0)
+        elif len(ori_arraysize) == 2:
+            size_mask = np.squeeze(size_mask, axis=0)
+            size_num = np.squeeze(size_num, axis=0)
+        return(size_num, size_mask)
+
+    def surround_array(self,vertical, lat, lon, array_s):
+        vertical_su = []
+        lat_su = []
+        lon_su = []
+        grid_su = 0
+        if vertical != 0:
+            vertical_su.append(vertical-1)
+            lon_su.append(lon)
+            lat_su.append(lat)
+            grid_su = grid_su + 1 
+        if vertical != array_s[0]-1:
+            vertical_su.append(vertical+1)
+            lon_su.append(lon)
+            lat_su.append(lat)
+            grid_su = grid_su + 1 
+        if lat != 0:
+            vertical_su.append(vertical)
+            lat_su.append(lat-1)
+            lon_su.append(lon)
+            grid_su = grid_su + 1 
+        if lat != array_s[1]-1:
+            vertical_su.append(vertical)
+            lat_su.append(lat+1)
+            lon_su.append(lon)
+            grid_su = grid_su + 1 
+        if lon != 0:
+            vertical_su.append(vertical)
+            lon_su.append(lon-1)
+            lat_su.append(lat)
+            grid_su = grid_su + 1 
+        if lon != array_s[2]-1:
+            vertical_su.append(vertical)
+            lon_su.append(lon+1)
+            lat_su.append(lat)
+            grid_su = grid_su + 1 
+        return(vertical_su,lat_su,lon_su,grid_su)
+
+    def six_way_connect(self,examining_array,threshold,
+                        checked_grid,size_mask,size_num,obj_num,
+                        vertical_su,lat_su,lon_su,grid_su,arraysize,
+                        cal_size):
+        waiting_grid = []
+### check first object pixel's surround pixel
+        for grid in range(0,grid_su):
+            test_grid = examining_array[vertical_su[grid],lat_su[grid],lon_su[grid]]
+            mask = size_mask[vertical_su[grid],lat_su[grid],lon_su[grid]]
+            if test_grid >= threshold and mask < 1:
+                checked_grid.extend([[vertical_su[grid],lat_su[grid],lon_su[grid]]])
+                waiting_grid.extend([[vertical_su[grid],lat_su[grid],lon_su[grid]]])
+                cal_size = cal_size + 1
+                size_mask[vertical_su[grid],lat_su[grid],lon_su[grid]]=1
+### check connected pixel
+        for wait in waiting_grid:
+            vertical_su1,lat_su1,lon_su1,grid_su1 = \
+            self.surround_array(wait[0],wait[1],wait[2],arraysize)
+            for grid1 in range(0,grid_su1):
+                test_grid = examining_array[vertical_su1[grid1],lat_su1[grid1],lon_su1[grid1]]
+                mask = size_mask[vertical_su1[grid1],lat_su1[grid1],lon_su1[grid1]]
+                if test_grid >= threshold and mask < 1:
+                    checked_grid.extend([[vertical_su1[grid1],lat_su1[grid1],lon_su1[grid1]]])
+                    waiting_grid.extend([[vertical_su1[grid1],lat_su1[grid1],lon_su1[grid1]]])
+                    cal_size = cal_size + 1
+                    size_mask[vertical_su1[grid1],lat_su1[grid1],lon_su1[grid1]] = 1
+    #print('adj',lat_cosine[lat_su1[grid1]])
+    #print('final',np.array(checked_grid).shape)
+    #print('size',area[0])
+    #print('adj_size',adj_size_mask)
+        for che in checked_grid:
+            size_mask[che[0],che[1],che[2]] = cal_size
+            size_num[che[0],che[1],che[2]] = obj_num
+        return(checked_grid, size_mask, size_num)
+#####
 

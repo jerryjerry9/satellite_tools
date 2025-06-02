@@ -16,8 +16,11 @@ class Data_group:
 
 
 class Himawari(Preparation):
-    def __init__(self,work_path=None,lat_range=[-10,50],lon_range=[90,180],time_period=['20150707'],data_path='/data/cloud2025/temporary_data'):
+    def __init__(self,work_path=None,lat_range=[-10,50],lon_range=[90,180],time_period=['20150707'],data_path='/data/dadm1/obs/Himawari'):
+        from pathlib import Path 
         super().__init__(work_path,lat_range,lon_range,time_period)
+        if self.work_path == None or self.work_path == []:
+            self.work_path = Path().cwd()
         self.data_path = data_path
 
     def test_part(self):
