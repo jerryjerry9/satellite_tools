@@ -28,7 +28,7 @@ class Preparation:
 
         Args:
           time_period (list): Start time and end time.
-          tume_delta (list): Time step.
+          time_delta (list): Time step.
           year, mon, day, hour, minn (list): Specific timestamp arrays.
 
         Returns:
@@ -50,8 +50,20 @@ class Preparation:
             time_types = self.string_info(time_info=True)
             date_1 = time_period[0]
             date_2 = time_period[1]
-            s_date = datetime(int(date_1[0:4]),int(date_1[4:6]),int(date_1[6:8]),int(date_1[8:10]),int(date_1[10:12]))
-            e_date = datetime(int(date_2[0:4]),int(date_2[4:6]),int(date_2[6:8]),int(date_2[8:10]),int(date_2[10:12]))
+###  start time setting
+            if len(date_1) < 12 and len(date_1) >= 10:
+                s_date = datetime(int(date_1[0:4]),int(date_1[4:6]),int(date_1[6:8]),int(date_1[8:10]),0)
+            elif len(date_1) < 10 and len(date_1) >= 8:
+                s_date = datetime(int(date_1[0:4]),int(date_1[4:6]),int(date_1[6:8]),0,0)
+            else:
+                s_date = datetime(int(date_1[0:4]),int(date_1[4:6]),int(date_1[6:8]),int(date_1[8:10]),int(date_1[10:12]))
+###  end time setting
+            if len(date_2) < 12 and len(date_2) >= 10:
+                e_date = datetime(int(date_2[0:4]),int(date_2[4:6]),int(date_2[6:8]),int(date_2[8:10]),0)
+            elif len(date_2) < 10 and len(date_2) >= 8:
+                e_date = datetime(int(date_2[0:4]),int(date_2[4:6]),int(date_2[6:8]),0,0)
+            else:
+                e_date = datetime(int(date_2[0:4]),int(date_2[4:6]),int(date_2[6:8]),int(date_2[8:10]),int(date_2[10:12]))
             #print(s_date,e_date)
             delta_value = [0,0,0]
             num = 0
@@ -373,75 +385,161 @@ class Preparation:
     """
     CloudSat general function
     """
-    def generate_period(self,year_list, ju_day_list, start_end_hour_list):
+    def generate_period(self,year_list, ju_day_list, start_end_time_list):
         year_list = self.check_list(year_list)
         ju_day_list = self.check_list(ju_day_list)
-        start_end_hour_list = self.check_list(start_end_hour_list)
+        start_end_time_list = self.check_list(start_end_time_list)
         search_period = []
         for yy in range(0,len(year_list)):
             order = 0
             limit = len(ju_day_list[yy])
             ju_day = ju_day_list[yy]
-            hour = start_end_hour_list[yy]
-            #print(limit)
+            hour = start_end_time_list[yy]
+            file_y = str(year_list[yy])
             for dd in range(0,len(ju_day)):
                 file_d = str(ju_day[dd])
                 if ju_day[dd] < 100:
                     file_d = '0' + file_d
                 if ju_day[dd] < 10:
                     file_d = '0' + file_d
-###  end time
                 end_hours = []
                 if order == limit-1:
+###  period less than one day
                     if order == 0:
-                        if int(hour[0]) == 0 and int(hour[1]) > 23:
-                            target_time = [str(year_list[yy]) + file_d]
-                            #print(target_time)
+                        if int(hour[0][0:4]) == 0 and int(hour[1][0:4]) > 2350:
+                            target_time = [file_y  + file_d]
                             search_period.extend(target_time)
                         else:
-                            end_hours = list(range(int(hour[0]),int(hour[1])))
+                            end_hours = list(range(int(hour[0][0:2]),int(hour[1][0:2])))
+                            ### time 
+                            if int(hour[1][3:4]) > 0:
+                                end_10mins = list(range(0,int(hour[1][2:3])+1))
+                            else:
+                                end_10mins = list(range(0,int(hour[1][2:3])))
+                            ### time period within one hour
+                            if len(end_hours) == 0:
+                                start_hour = int(hour[0][0:2])
+                                file_h = str(start_hour)
+                                if start_hour < 10:
+                                    file_h = '0' + file_h
+                                if int(hour[1][3:4]) > 0:
+                                    start_10mins = list(range(int(hour[0][2:3]),int(hour[1][2:3])+1))
+                                else:
+                                    start_10mins = list(range(int(hour[0][2:3]),int(hour[1][2:3])))
+                                if len(start_10mins) < 6:
+                                    for single_min in start_10mins:
+                                        file_m = str(single_min)
+                                        target_time = [file_y + file_d + file_h + file_m]
+                                        search_period.extend(target_time)
+                                else:
+                                    target_time = [file_y + file_d + file_h]
+                                    search_period.extend(target_time)
+                            ### time period > one hour
+                            if len(end_hours) > 0:
+                                first_hour = 0
+                                for single_hour in end_hours:
+                                    ### add start 10min
+                                    start_10mins = list(range(int(hour[0][2:3]),6))
+                                    if int(hour[0][2:3]) > 0 and first_hour == 0:
+                                        file_h = str(single_hour)
+                                        if single_hour < 10:
+                                            file_h = '0' + file_h
+                                        for single_min in start_10mins:
+                                            file_m = str(single_min)
+                                            target_time = [file_y + file_d + file_h + file_m]
+                                            search_period.extend(target_time)
+                            ###
+                                    else:
+                                        target_time_ydh = self.target_time_yr_d_hr(file_y, file_d, single_hour)
+                                        search_period.extend(target_time_ydh)
+                                    first_hour = first_hour +1
+                                ###
+                            if len(end_10mins) > 0 and len(end_hours) > 0:
+                                file_h = str(end_hours[-1]+1)
+                                if single_hour < 10:
+                                    file_h = '0' + file_h
+                                if int(hour[1][2:4]) > 50:
+                                    target_time = [file_y + file_d + file_h ]
+                                    search_period.extend(target_time)
+                                else:
+                                    for single_min in end_10mins:
+                                        file_m = str(single_min)
+                                        target_time = [file_y + file_d + file_h + file_m]
+                                        search_period.extend(target_time)
+###  period large than one day
+###  last day start from 00:00UTC
                     else:
-                        if int(hour[1]) > 23:
-                            target_time = [str(year_list[yy]) + file_d]
-                            #print(target_time)
+                        if int(hour[1][0:4]) > 2350:
+                            target_time = [file_y + file_d]
                             search_period.extend(target_time)
                         else:
-
-                            end_hours = list(range(0,int(hour[1])))
-                    if len(end_hours) > 0:
-                        for single_hour in end_hours:
-                            file_h = str(single_hour)
-                            if single_hour < 10:
-                                file_h = '0' + file_h
-                            target_time = [str(year_list[yy]) + file_d + file_h]
-                            #print(target_time)
-                            search_period.extend(target_time)
+                            end_hours = list(range(0,int(hour[1][0:2])))
+                            if int(hour[1][3:4]) > 0:
+                                end_10mins = list(range(0,int(hour[1][2:3])+1))
+                            else:
+                                end_10mins = list(range(0,int(hour[1][2:3])))
+                            
+                            if len(end_hours) > 0:
+                                for single_hour in end_hours:
+                                    target_time_ydh = self.target_time_yr_d_hr(file_y, file_d, single_hour)
+                                    search_period.extend(target_time_ydh)
+                            if len(end_10mins) > 0:
+                                file_h = str(end_hours[-1]+1)
+                                if single_hour < 10:
+                                    file_h = '0' + file_h
+                                if int(hour[1][2:4]) > 50: 
+                                    target_time = [file_y + file_d + file_h ]
+                                    search_period.extend(target_time)
+                                else:
+                                    for single_min in end_10mins:
+                                        file_m = str(single_min)
+                                        target_time = [file_y + file_d + file_h + file_m]
+                                        search_period.extend(target_time)
+###  end time else
 ### start time
-                elif order == 0 and int(hour[0]) > 0:
-                    end_hours = list(range(int(hour[0]),24))
+### period large than one day
+                elif order == 0 and int(hour[0][2:3]) > 0 :
+### min range
+                    end_10mins = list(range(int(hour[0][2:3]),6))
+                    end_hours = list(range(int(hour[0][0:2]),24))
+                    if len(end_hours) > 0:
+                        first_hour = 0
+                        for single_hour in end_hours:
+                            ### add start 10min
+                            if int(hour[0][2:3]) > 0 and first_hour == 0:
+                                file_h = str(single_hour)
+                                if single_hour < 10:
+                                    file_h = '0' + file_h
+                                for single_min in end_10mins:
+                                    file_m = str(single_min)
+                                    target_time = [file_y + file_d + file_h + file_m]
+                                    search_period.extend(target_time)
+                            ###
+                            else:
+                                target_time_ydh = self.target_time_yr_d_hr(file_y, file_d, single_hour)
+                                search_period.extend(target_time_ydh)
+                            first_hour = first_hour +1
+### normal condition
+                elif order == 0 and int(hour[0][0:2]) > 0:
+                    end_hours = list(range(int(hour[0][0:2]),24))
                     if len(end_hours) > 0:
                         for single_hour in end_hours:
-                            file_h = str(single_hour)
-                            if single_hour < 10:
-                                 file_h = '0' + file_h
-                            target_time = [str(year_list[yy]) + file_d + file_h]
-                            #print(target_time)
-                            search_period.extend(target_time)
-### normal condition
+                            target_time_ydh = self.target_time_yr_d_hr(file_y, file_d, single_hour)
+                            search_period.extend(target_time_ydh)
                 else:
-                    target_time = [str(year_list[yy]) + file_d]
-                    #print(target_time[0])
+                    target_time = [file_y + file_d]
                     search_period.extend(target_time)
 ###
                 order = order + 1
         return(search_period)
 
-    def convert_input_period(self,time_period):
+    def convert_input_period(self,time_period,julian=True):
         time_period = self.check_list(time_period)
         year = []
-        start_end_hour = []
+        start_end_time = []
         year.append(time_period[0][0:4])
-        t1 = [time_period[0][8:10],time_period[1][8:10]]
+        #if len()
+        #t1 = [time_period[0][8:12],time_period[1][8:12]]
         if year[0] != time_period[1][0:4]:
             year.append(time_period[1][0:4])
         total_period = []
@@ -454,11 +552,27 @@ class Preparation:
             total_period.append(time_period)
         ju_day = []
         for period in total_period:
-            t1_t2 = [period[0][8:10],period[1][8:10]]
+            t1_t2 = []
+            if len(period[0])<12 and len(period[0])>=10:
+                t1_t2.append(period[0][8:10]+'00')
+            elif len(period[0])<10 and len(period[0])>=8:
+                t1_t2.append('0000')
+            else:
+                t1_t2.append(period[0][8:12])
+            if len(period[1])<12 and len(period[1])>=10:
+                t1_t2.append(period[1][8:10]+'00')
+            elif len(period[1])<10 and len(period[1])>=8:
+                t1_t2.append('0000')
+            else:
+                t1_t2.append(period[1][8:12])
+            #t1_t2 = [period[0][8:10],period[1][8:10]]
             print(period[0],period[1])
-            start_end_hour.append(t1_t2)
-            ju_day.append(self.julian_time_range(period))
-        return(year, ju_day, start_end_hour)
+            start_end_time.append(t1_t2)
+            if julian:
+                ju_day.append(self.julian_time_range(period))
+            else:
+                ju_day.append(self.date_time_range(period))
+        return(year, ju_day, start_end_time)
 
     def julian_time_range(self,time_period):
         from datetime import datetime
@@ -473,7 +587,173 @@ class Preparation:
             ju_day.append(ju)
         ju_list = list(range(ju_day[0],ju_day[1]+1))
         return(ju_list)
-   
+    
+    def target_time_yr_d_hr(self, file_year, file_day, single_hr, hr_mn_separate=False):
+        file_h = str(single_hr)
+        if single_hr < 10:
+            file_h = '0' + file_h
+        if hr_mn_separate:
+            target_time_ydh = [file_year + file_day + 'T' + file_h]
+        else:
+            target_time_ydh = [file_year + file_day + file_h]
+        return(target_time_ydh)
+ 
+    """
+    EarthCARE general function 
+    """
+    def generate_date_period(self, year_list, date_day_list, start_end_time_list):
+        year_list = self.check_list(year_list)
+        date_day_list = self.check_list(date_day_list)
+        start_end_time_list = self.check_list(start_end_time_list)
+        search_period = []
+        for yy in range(0,len(year_list)):
+            order = 0
+            limit = len(date_day_list[yy])
+            date_day = date_day_list[yy]
+            hour = start_end_time_list[yy]
+            file_y = str(year_list[yy])
+            for dd in range(0,len(date_day)):
+                file_d = str(date_day[dd])
+                end_hours = []
+                if order == limit-1:
+###  period less than one day
+                    if order == 0:
+                        if int(hour[0][0:4]) == 0 and int(hour[1][0:4]) > 2350:
+                            target_time = [file_y  + file_d + 'T']
+                            search_period.extend(target_time)
+                        else:
+                            end_hours = list(range(int(hour[0][0:2]),int(hour[1][0:2])))
+                            ### time
+                            if int(hour[1][3:4]) > 0:
+                                end_10mins = list(range(0,int(hour[1][2:3])+1))
+                            else:
+                                end_10mins = list(range(0,int(hour[1][2:3])))
+                            ### time period within one hour
+                            if len(end_hours) == 0:
+                                start_hour = int(hour[0][0:2])
+                                file_h = str(start_hour)
+                                if start_hour < 10:
+                                    file_h = '0' + file_h
+                                if int(hour[1][3:4]) > 0:
+                                    start_10mins = list(range(int(hour[0][2:3]),int(hour[1][2:3])+1))
+                                else:
+                                    start_10mins = list(range(int(hour[0][2:3]),int(hour[1][2:3])))
+                                if len(start_10mins) < 6:
+                                    for single_min in start_10mins:
+                                        file_m = str(single_min)
+                                        target_time = [file_y + file_d + 'T' + file_h + file_m]
+                                        search_period.extend(target_time)
+                                else:
+                                    target_time = [file_y + file_d + 'T' + file_h]
+                                    search_period.extend(target_time)
+                            ### time period > one hour
+                            if len(end_hours) > 0:
+                                first_hour = 0
+                                for single_hour in end_hours:
+                                    ### add start 10min
+                                    start_10mins = list(range(int(hour[0][2:3]),6))
+                                    if int(hour[0][2:3]) > 0 and first_hour == 0:
+                                        file_h = str(single_hour)
+                                        if single_hour < 10:
+                                            file_h = '0' + file_h
+                                        for single_min in start_10mins:
+                                            file_m = str(single_min)
+                                            target_time = [file_y + file_d + 'T' + file_h + file_m]
+                                            search_period.extend(target_time)
+                            ###
+                                    else:
+                                        target_time_ydh = self.target_time_yr_d_hr(file_y, file_d, single_hour, hr_mn_separate=True)
+                                        search_period.extend(target_time_ydh)
+                                    first_hour = first_hour +1
+                                ###
+                            if len(end_10mins) > 0 and len(end_hours) > 0:
+                                file_h = str(end_hours[-1]+1)
+                                if single_hour < 10:
+                                    file_h = '0' + file_h
+                                if int(hour[1][2:4]) > 50:
+                                    target_time = [file_y + file_d + 'T' + file_h ]
+                                    search_period.extend(target_time)
+                                else:
+                                    for single_min in end_10mins:
+                                        file_m = str(single_min)
+                                        target_time = [file_y + file_d + 'T' + file_h + file_m]
+                                        search_period.extend(target_time)
+###  period large than one day
+###  last day start from 00:00UTC
+                    else:
+                        if int(hour[1][0:4]) > 2350:
+                            target_time = [file_y + file_d + 'T']
+                            search_period.extend(target_time)
+                        else:
+                            end_hours = list(range(0,int(hour[1][0:2])))
+                            if int(hour[1][3:4]) > 0:
+                                end_10mins = list(range(0,int(hour[1][2:3])+1))
+                            else:
+                                end_10mins = list(range(0,int(hour[1][2:3])))
+
+                            if len(end_hours) > 0:
+                                for single_hour in end_hours:
+                                    target_time_ydh = self.target_time_yr_d_hr(file_y, file_d, single_hour, hr_mn_separate=True)
+                                    search_period.extend(target_time_ydh)
+                            if len(end_10mins) > 0:
+                                file_h = str(end_hours[-1]+1)
+                                if single_hour < 10:
+                                    file_h = '0' + file_h
+                                if int(hour[1][2:4]) > 50:
+                                    target_time = [file_y + file_d + 'T' + file_h ]
+                                    search_period.extend(target_time)
+                                else:
+                                    for single_min in end_10mins:
+                                        file_m = str(single_min)
+                                        target_time = [file_y + file_d + 'T' + file_h + file_m]
+                                        search_period.extend(target_time)
+###  end time else
+### start time
+### period large than one day
+                elif order == 0 and int(hour[0][2:3]) > 0 :
+### min range
+                    end_10mins = list(range(int(hour[0][2:3]),6))
+                    end_hours = list(range(int(hour[0][0:2]),24))
+                    if len(end_hours) > 0:
+                        first_hour = 0
+                        for single_hour in end_hours:
+                            ### add start 10min
+                            if int(hour[0][2:3]) > 0 and first_hour == 0:
+                                file_h = str(single_hour)
+                                if single_hour < 10:
+                                    file_h = '0' + file_h
+                                for single_min in end_10mins:
+                                    file_m = str(single_min)
+                                    target_time = [file_y + file_d + 'T' + file_h + file_m]
+                                    search_period.extend(target_time)
+                            ###
+                            else:
+                                target_time_ydh = self.target_time_yr_d_hr(file_y, file_d, single_hour, hr_mn_separate=True)
+                                search_period.extend(target_time_ydh)
+                            first_hour = first_hour +1
+### normal condition
+                elif order == 0 and int(hour[0][0:2]) > 0:
+                    end_hours = list(range(int(hour[0][0:2]),24))
+                    if len(end_hours) > 0:
+                        for single_hour in end_hours:
+                            target_time_ydh = self.target_time_yr_d_hr(file_y, file_d, single_hour, hr_mn_separate=True)
+                            search_period.extend(target_time_ydh)
+                else:
+                    target_time = [file_y + file_d + 'T']
+                    search_period.extend(target_time)
+###
+                order = order + 1
+        return(search_period)
+     
+    def date_time_range(self,time_period):
+        from datetime import datetime
+        time_period = self.check_list(time_period)
+        time_delta = ['days=1','hours=0','minutes=0']
+        time_list = self.generate_time_list(time_period=time_period,time_delta=time_delta)
+        date_list = []
+        for date in time_list:
+            date_list.append(date[4:8])
+        return(date_list)
     """
     Object Identify
     """ 

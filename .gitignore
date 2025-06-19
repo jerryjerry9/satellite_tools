@@ -4,3 +4,8 @@ __pycache__
 ael_satellite_tools.egg-info
 build
 dist
+docs/
+example/cloudsat_fig/
+example/himawari_figure/
+example/rgb_figure_true_color_202312220400.png
+example/ro_fig/
