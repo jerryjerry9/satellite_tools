@@ -9,7 +9,10 @@ doing statistic, and plotting
 from ..satellite_general import Preparation
 
 class Himawari(Preparation):
-    def __init__(self,work_path=None,plotting_lat_range=[-10,50],plotting_lon_range=[90,180],time_period=['20150707'],data_path='/data/dadm1/obs/Himawari'):
+    def __init__(self,work_path=None,
+                 plotting_lat_range=[-10,50],plotting_lon_range=[90,180],
+                 time_period=['20150707'],
+                 data_path='/data/cloud2025/temporary_data',data_end_path='day'):
         super().__init__(work_path,plotting_lat_range,plotting_lon_range,time_period)
         from pathlib import Path
         self.plotting_lat_range = plotting_lat_range
@@ -17,6 +20,7 @@ class Himawari(Preparation):
         if self.work_path == None or self.work_path == []:
             self.work_path = Path().cwd()
         self.data_path = data_path
+        self.data_end_path = data_end_path
 
     def rgb_composite(self,time_list,rgb_product,ta_resolution=2,plotting_info=True,reduce_local_adjust_angle=78,reduce_high_zenith_adjust=True,reduce_rs_corr_angle=78,reduce_rs_corr_strength=1,reduce_rayleigh_corr = True,hybrid_data2_ratio=0.07,self_gamma=None,profile_ID=0,self_defined_profile=None,self_defined_enhance=None):
         """
@@ -170,9 +174,11 @@ class Himawari(Preparation):
         file_list = []
         full_path_file_list = []
         for file_date in time_list:
-            path_year = file_date[0:4]
-            path_mon = file_date[4:6]
-            nc_data_path = self.data_path + '/sub_domain_data/'+path_year+'/'+path_mon+''
+            #path_year = file_date[0:4]
+            #path_mon = file_date[4:6]
+            #nc_data_path = self.data_path + '/sub_domain_data/'+path_year+'/'+path_mon+''
+            date_path = self.date_path_generate(file_date)
+            nc_data_path = self.data_path + '/sub_domain_data/'+date_path+''
             file_name = []
             if len(AHI_band) > 0:
                 for b_num in AHI_band:

@@ -5,8 +5,11 @@ FS3 & FS7 RO profiles pre-process module
 from ..satellite_general import Preparation
 from ..satellite_plotting import Plotting_tools
 
+
 class RO(Preparation,Plotting_tools):
-    def __init__(self,work_path=None,lat_range=[-10,60],lon_range=[90,150],time_period=['200606'],data_path='/data/dadm1/obs/RO_profile'):
+    def __init__(self,work_path=None,
+                 lat_range=[-10,60],lon_range=[90,150],time_period=['200606'],
+                 data_path='/data/dadm1/obs/RO_profile'):
         from pathlib import Path
         super().__init__(work_path,lat_range,lon_range,time_period)
         if self.work_path == None or self.work_path == []:
@@ -173,7 +176,7 @@ class RO(Preparation,Plotting_tools):
         from ael_satellite_tools.preprocess import CloudSat
         cloudsat = CloudSat(work_path=[],
                             lat_range=self.lat_range,
-                            lon_range=self.lon_range)   
+                            lon_range=self.lon_range)
         ro_file_list = self.check_list(ro_file_list)
         rgb_array = self.check_list(rgb_array)
         plotting_lon_list = self.check_list(plotting_lon_list)
@@ -235,7 +238,13 @@ class RO(Preparation,Plotting_tools):
         if len(rgb_array)>0:
             fig_num = 0
             xi, yi = np.meshgrid(plotting_lon_list[0],plotting_lat_list[0])
-            m.pcolormesh(xi,yi,rgb_array[fig_num])
+            rgb_array_shape = rgb_array[fig_num].shape
+            if len(rgb_array_shape)>2:
+                m.pcolormesh(xi,yi,rgb_array[fig_num])
+            else: 
+                bt_min = np.min(rgb_array[fig_num])+10
+                bt_max = np.max(rgb_array[fig_num])-10
+                m.pcolormesh(xi,yi,rgb_array[fig_num],vmin=bt_min,vmax=bt_max,cmap='Greys')
 
 ### cloudsat
         if len(cloudsat_file)>0:

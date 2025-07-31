@@ -5,6 +5,7 @@ CloudSat pre-process module
 from ..satellite_general import Preparation
 from ..satellite_plotting import Plotting_tools
 
+
 class CloudSat(Preparation,Plotting_tools):
     def __init__(self,work_path=None,lat_range=[-10,50],lon_range=[90,180],time_period=['200606'],data_path='/data/dadm1/obs/CloudSat'):
         from pathlib import Path
@@ -75,36 +76,35 @@ class CloudSat(Preparation,Plotting_tools):
             else:
                 return(sub_domain_file_list)
 
+#    def regional_filter(self, data_lon, data_lat, data_quality=None, extracted_lon_range=[],extracted_lat_range=[], quality_value=0.1):
+#        import numpy as np
+#        arr_size=len(data_lon)
+#        if len(extracted_lon_range)<1 and len(extracted_lat_range)<1:
+#            lon_s = self.lon_range[0]
+#            lon_e = self.lon_range[1]
+#            lat_s = self.lat_range[0]
+#            lat_e = self.lat_range[1]
+#        else:
+#            lon_s = extracted_lon_range[0]
+#            lon_e = extracted_lon_range[1]
+#            lat_s = extracted_lat_range[0]
+#            lat_e = extracted_lat_range[1]
 
-    def regional_filter(self, data_lon, data_lat, data_quality=None, extracted_lon_range=[],extracted_lat_range=[], quality_value=0.1):
-        import numpy as np
-        arr_size=len(data_lon)
-        if len(extracted_lon_range)<1 and len(extracted_lat_range)<1:
-            lon_s = self.lon_range[0]
-            lon_e = self.lon_range[1]
-            lat_s = self.lat_range[0]
-            lat_e = self.lat_range[1]
-        else:
-            lon_s = extracted_lon_range[0]
-            lon_e = extracted_lon_range[1]
-            lat_s = extracted_lat_range[0]
-            lat_e = extracted_lat_range[1]
+#        lon_list = self.fit_era5_lon([data_lon])
+#        data_lon = lon_list[0]
+#        data_lat = np.array(data_lat)
+#        tem_mask = np.zeros((arr_size,1))
 
-        lon_list = self.fit_era5_lon([data_lon])
-        data_lon = lon_list[0]
-        data_lat = np.array(data_lat)
-        tem_mask = np.zeros((arr_size,1))
+#        if data_quality == None:
+#            tem_mask = np.where((data_lon >= lon_s) & (data_lon <= lon_e) & (data_lat >= lat_s) & (data_lat <= lat_e), tem_mask+1, tem_mask)
+#        else:
+#            data_quality = np.array(data_quality)
+#            data_quality = data_quality
+#            tem_mask = np.where((data_lon >= lon_s) & (data_lon <= lon_e) & (data_lat >= lat_s) & (data_lat <= lat_e) & (data_quality < quality_value), tem_mask+1, tem_mask)
 
-        if data_quality == None:
-            tem_mask = np.where((data_lon >= lon_s) & (data_lon <= lon_e) & (data_lat >= lat_s) & (data_lat <= lat_e), tem_mask+1, tem_mask)
-        else:
-            data_quality = np.array(data_quality)
-            data_quality = data_quality
-            tem_mask = np.where((data_lon >= lon_s) & (data_lon <= lon_e) & (data_lat >= lat_s) & (data_lat <= lat_e) & (data_quality < quality_value), tem_mask+1, tem_mask)
-
-        mask = np.zeros((arr_size,1))
-        mask[:,:] = tem_mask
-        return(mask,data_lon,data_lat)
+#        mask = np.zeros((arr_size,1))
+#        mask[:,:] = tem_mask
+#        return(mask,data_lon,data_lat)
 
 
     def cross_product_match(self,*lists):
@@ -315,16 +315,6 @@ class CloudSat(Preparation,Plotting_tools):
             else:
                 return(hdf_date,hdf_id,hdf_granule,region_start_time,region_end_time)
 
-    def fit_era5_lon(self,lon_list):
-        import numpy as np
-        lon_list = self.check_list(lon_list)
-        era5_lon_list = []
-        for i in range(0,len(lon_list)):
-            lon_array = np.array(lon_list[i])
-            lon_array = np.where(lon_array >= 0, lon_array, lon_array+360)
-            era5_lon_list.append(lon_array)        
-        return(era5_lon_list)
-
     def hdf_information(self,full_path_file_list):
         from pyhdf.SD  import SD, SDC
         from pyhdf import V
@@ -356,13 +346,13 @@ class CloudSat(Preparation,Plotting_tools):
         minutes = (seconds % 3600) // 60
         return(hours, minutes) 
 
-    def cloudsat_string_info(self):
-        color_step = [1,2,3,4,5,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3]
-        local_ref_time = ['13','12','11','10','09','08','07',
-                          '06','05','04','03','02','01','00',
-                          '23','22','21','20','19','18','17',
-                          '16','15','14']      
-        return(color_step,local_ref_time)
+    #def cloudsat_string_info(self):
+    #    color_step = [1,2,3,4,5,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3]
+    #    local_ref_time = ['13','12','11','10','09','08','07',
+    #                      '06','05','04','03','02','01','00',
+    #                      '23','22','21','20','19','18','17',
+    #                      '16','15','14']      
+    #    return(color_step,local_ref_time)
  
     def plot_profile(self,masked_ref=[],masked_cf=[],shading='contourf',
                      x_axis=[],x_step=5,extracted_hei=[],height_range=[0,20],height_step=5,
@@ -449,8 +439,16 @@ class CloudSat(Preparation,Plotting_tools):
            s_hr = '0'+s_hr
         if region_end_time[0][0]<10:
            e_hr = '0'+e_hr
-        s_time = ''+s_hr+':'+ str(region_start_time[0][1])+''
-        e_time = ''+e_hr+':'+ str(region_end_time[0][1])+'UTC'
+
+        s_mn = str(region_start_time[0][1])
+        e_mn = str(region_end_time[0][1])
+        if region_start_time[0][1]<10:
+           s_mn = '0'+s_mn
+        if region_end_time[0][1]<10:
+           e_mn = '0'+e_mn
+
+        s_time = ''+s_hr+':'+ s_mn +''
+        e_time = ''+e_hr+':'+ e_mn +'UTC'
         title = ''+figure_title+'\nGranule: '+hdf_granule[0]+'  Time: '+s_time+' ~ '+e_time+''
         self.plot_title_unit(title,loc='left',pad=12,font_size=24)
 ### color bar unit

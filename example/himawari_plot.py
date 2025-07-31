@@ -2,29 +2,38 @@ from ael_satellite_tools.plotting import Himawari
 #import matplotlib.pyplot as plt
 #import numpy as np
 
-data_path = '/data/C.jerryjerry9/hima_download/himawari_data/'
+data_path = '/data/C.jerryjerry9/Himawari'
 lon = [90, 180]
 lat = [-10, 50]
 hima_plot = Himawari(work_path=[],data_path=data_path,plotting_lat_range=lat,plotting_lon_range=lon)
 
 ### Set download time period -- 1
-year = ['2023'] # Year: from 2015
-mon = ['12']    # Month: 01 02 ... 12
-day = ['22']    # Day: 01 02 ... 30 31
-hour = ['04']   # Hour: 00 01 ... 23
-minn = ['00']    # Minute: 00 10 20 30 40 50
+year = ['2018'] # Year: from 2015
+mon = ['01']    # Month: 01 02 ... 12
+day = ['10']    # Day: 01 02 ... 30 31
+hour = ['03']   # Hour: 00 01 ... 23
+minn = ['10']    # Minute: 00 10 20 30 40 50
+
 # Set band type
 AHI_band = [1,2,3,4] # 1, 2, 3 ... 16
 geo = ['sun.azm', 'sun.zth','sat.azm', 'sat.zth']
 
 time_list = hima_plot.generate_time_list(year=year,mon=mon,day=day,hour=hour,minn=minn)
 
+print(time_list)
+
 file_list, full_path_file_list = hima_plot.generate_data_list(time_list=time_list, AHI_band=AHI_band,geo=geo)
+
+print(full_path_file_list)
+
 
 avaiable_time_list, data_issue_list,data_issue_date = hima_plot.check_data(time_list, file_list, full_path_file_list)
 
+print(avaiable_time_list)
+
 file_list, full_path_file_list = hima_plot.generate_data_list(time_list=avaiable_time_list,AHI_band=AHI_band,geo=geo)
 
+print(full_path_file_list)
 output_data_list = []
 output_file_list = []
 for file_name in full_path_file_list:

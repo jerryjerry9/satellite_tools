@@ -16,12 +16,16 @@ class Data_group:
 
 
 class Himawari(Preparation):
-    def __init__(self,work_path=None,lat_range=[-10,50],lon_range=[90,180],time_period=['20150707'],data_path='/data/dadm1/obs/Himawari'):
+    def __init__(self,work_path=None,lat_range=[-10,50],lon_range=[90,180],
+                 time_period=['20150707'],
+                 data_path='/data/cloud2025/temporary_data',
+                 data_end_path='day'):
         from pathlib import Path 
         super().__init__(work_path,lat_range,lon_range,time_period)
         if self.work_path == None or self.work_path == []:
             self.work_path = Path().cwd()
         self.data_path = data_path
+        self.data_end_path = data_end_path
 
     def test_part(self):
         data_path = self.data_path
@@ -39,7 +43,10 @@ class Himawari(Preparation):
         file_list, zip_file_list, ftp_path_file_list = self.generate_data_list(time_list=time_list,band=band,band_num=band_num,geo=geo,band4km=band4km,separate_ori_4km=separate_ori_4km)
         return (file_list, zip_file_list, ftp_path_file_list)
 
-    def pre_process(self, ftp_path_file_list, remove_list_flag=True, download_flag=True):
+    def pre_process(self, ftp_path_file_list, 
+                    remove_list_flag=True, 
+                    download_flag=True,
+                     ):
         """
         Integrate all functions for pre-processing
         download data, sub-domain extraction, and generate nc files
@@ -168,9 +175,11 @@ class Himawari(Preparation):
             split_name = file_name.split('/')
             zip_file = split_name[-1]
             band_date, band, band_num  = self.name_info(file_name,convert2tbb=True)
-            path_year = band_date[0:4]
-            path_mon = band_date[4:6]
-            nc_data_path = self.data_path + '/sub_domain_data/'+path_year+'/'+path_mon+''
+#            path_year = band_date[0:4]
+#            path_mon = band_date[4:6]
+#            nc_data_path = self.data_path + '/sub_domain_data/'+path_year+'/'+path_mon+''
+            date_path = self.date_path_generate(band_date)
+            nc_data_path = self.data_path + '/sub_domain_data/'+date_path+''
 
             array_shape = self.band_array(band)
             nc_info = self.nc_file_info(file_name)
@@ -201,9 +210,12 @@ class Himawari(Preparation):
 ###    collect file information
             zip_file, file_name = self.name_info(download_file)        
             band_date, band, band_num  = self.name_info(file_name,convert2tbb=True)
-            path_year = band_date[0:4]
-            path_mon = band_date[4:6]
-            download_path = self.data_path + '/compressed_data/'+path_year+'/'+path_mon+''
+            #path_year = band_date[0:4]
+            #path_mon = band_date[4:6]
+            #download_path = self.data_path + '/compressed_data/'+path_year+'/'+path_mon+''
+            date_path = self.date_path_generate(band_date)
+            download_path = self.data_path + '/compressed_data/'+date_path+''
+
             os.makedirs(download_path, exist_ok=True)
 ###    check file already downloaded or not
             downloaded_file = sorted(glob.glob(download_path+'/'+zip_file)) 
@@ -240,9 +252,12 @@ class Himawari(Preparation):
 ###    collect file information
             zip_file, output_file_name = self.name_info(download_file)
             band_date, band, band_num  = self.name_info(output_file_name,convert2tbb=True)
-            path_year = band_date[0:4]
-            path_mon = band_date[4:6]
-            download_path = self.data_path + '/compressed_data/'+path_year+'/'+path_mon+''
+#            path_year = band_date[0:4]
+#            path_mon = band_date[4:6]
+#            download_path = self.data_path + '/compressed_data/'+path_year+'/'+path_mon+''
+            date_path = self.date_path_generate(band_date)
+            download_path = self.data_path + '/compressed_data/'+date_path+''
+
 ###    check file downloaded or not 
             downloaded_file = sorted(glob.glob(download_path+'/'+zip_file))
             file_len = len(downloaded_file)
@@ -358,9 +373,13 @@ class Himawari(Preparation):
         num = 0
         for output_file_name in file_name:
             output_name, band_date, var_name, long_name, units, missing_value = self.nc_file_info(output_file_name)
-            path_year = band_date[0:4]
-            path_mon = band_date[4:6]
-            nc_data_path = self.data_path + '/sub_domain_data/'+path_year+'/'+path_mon+''
+#            path_year = band_date[0:4]
+#            path_mon = band_date[4:6]
+#            nc_data_path = self.data_path + '/sub_domain_data/'+path_year+'/'+path_mon+''
+            date_path = self.date_path_generate(band_date)
+            nc_data_path = self.data_path + '/sub_domain_data/'+date_path+''
+
+
             os.makedirs(nc_data_path, exist_ok=True)
     
             band_data = sub_domain_band_tbb[num]
@@ -547,6 +566,65 @@ class Himawari(Preparation):
                 units = units_table[pos_idx]
                 missing_value = missing_value_table[pos_idx]
         return(output_name, band_date, var_name, long_name, units, missing_value)
+
+    def move_data(self,current_folder='month',target_folder='day'):
+        """
+        A function to move downloaded data from the month folder to the day folder.
+
+        To move data in the opposite direction (from day to month), simply reverse the keyword arguments.
+
+        """
+        import glob
+        import os
+        import shutil
+        sub_data_path = []
+        sub_data_path.append(''+self.data_path+'/compressed_data/')
+        sub_data_path.append(''+self.data_path+'/sub_domain_data/')
+        #print('Move targets files from '+current_folder+' folder to '+target_folder+' folder')
+        for type_num in range(0,len(sub_data_path)):
+            each_path = sub_data_path[type_num]
+            if type_num == 0:
+                print('Move compressed files from '+current_folder+' folder to '+target_folder+' folder')
+            if type_num == 1:
+                print('Move sub-domain files from '+current_folder+' folder to '+target_folder+' folder')
+###
+###         from day folder to month folder
+            if current_folder == 'day' and target_folder == 'month':
+                month_folder = sorted(glob.glob(''+each_path+'/*/*/'))
+                for mon_path in month_folder:
+                    day_folder = sorted(glob.glob(''+mon_path+'/*/'))
+                    for folder in day_folder:
+                        files = sorted(glob.glob(''+folder+'/*.*'))
+                        for move_file in files:
+                            file_name = os.path.basename(move_file)
+                            target_path = os.path.join(mon_path, file_name)
+                            shutil.move(move_file, target_path)
+###
+###         from month folder to day folder 
+            if current_folder == 'month' and target_folder == 'day':
+                month_folder = sorted(glob.glob(''+each_path+'/*/*/'))
+                for mon_path in month_folder:
+                    files = sorted(glob.glob(''+mon_path+'/*.*'))
+                    for move_file in files:
+                        file_name = os.path.basename(move_file)
+                        path_day = file_name[6:8]
+                        day_folder = ''+mon_path +''+path_day+''
+                        os.makedirs(day_folder, exist_ok=True)
+                        target_path = os.path.join(mon_path, path_day, file_name)
+                        shutil.move(move_file, target_path)
+        print('Process finished.')              
+
+    def date_path_generate(self,band_date):
+        path_year = band_date[0:4]
+        path_mon = band_date[4:6]
+        path_day = band_date[6:8]
+        if self.data_end_path == 'month':
+            date_path = ''+path_year+'/'+path_mon+''
+        elif self.data_end_path == 'year':
+            date_path = path_year
+        else:
+            date_path = ''+path_year+'/'+path_mon+'/'+path_day+''
+        return(date_path)
 
     def load_LUT(self,band_date,band,band_num):
         from pathlib import Path

@@ -243,6 +243,18 @@ class Preparation:
                     CEReS_num.append(band_num)
         return(CEReS_type,sorted(CEReS_num))
 
+    def date_path_generate(self,band_date):
+        path_year = band_date[0:4]
+        path_mon = band_date[4:6]
+        path_day = band_date[6:8]
+        if self.data_end_path == 'month':
+            date_path = ''+path_year+'/'+path_mon+''
+        elif self.data_end_path == 'year':
+            date_path = path_year
+        else:
+            date_path = ''+path_year+'/'+path_mon+'/'+path_day+''
+        return(date_path)
+
     def string_info(self, binary_info=False, band_info=False, band_num_info=False,nc_info=False,nc_4km_info=False,nc_4km_var_info=False,time_info=False,nc_plotting_list=False):
 ###
         binary_types = ['geoss', 'bin', 'dat']
@@ -597,7 +609,58 @@ class Preparation:
         else:
             target_time_ydh = [file_year + file_day + file_h]
         return(target_time_ydh)
- 
+
+    def fit_era5_lon(self,lon_list):
+        import numpy as np
+        lon_list = self.check_list(lon_list)
+        era5_lon_list = []
+        for i in range(0,len(lon_list)):
+            lon_array = np.array(lon_list[i])
+            lon_array = np.where(lon_array >= 0, lon_array, lon_array+360)
+            era5_lon_list.append(lon_array)
+        return(era5_lon_list)
+
+    def regional_filter(self, data_lon, data_lat, data_quality=None, extracted_lon_range=[],extracted_lat_range=[], quality_value=0.1):
+        import numpy as np
+        arr_size=len(data_lon)
+        if len(extracted_lon_range)<1 and len(extracted_lat_range)<1:
+            lon_s = self.lon_range[0]
+            lon_e = self.lon_range[1]
+            lat_s = self.lat_range[0]
+            lat_e = self.lat_range[1]
+        else:
+            lon_s = extracted_lon_range[0]
+            lon_e = extracted_lon_range[1]
+            lat_s = extracted_lat_range[0]
+            lat_e = extracted_lat_range[1]
+
+        #print(lon_s,lon_e,lat_s,lat_e)
+
+        lon_list = self.fit_era5_lon([data_lon])
+        data_lon = lon_list[0]
+        data_lat = np.array(data_lat)
+        #print(data_lon.shape)
+        #print(data_lat.shape)
+        tem_mask = np.zeros((arr_size,1))
+        if data_quality == None:
+            tem_mask = np.where((data_lon >= lon_s) & (data_lon <= lon_e) & (data_lat >= lat_s) & (data_lat <= lat_e), tem_mask+1, tem_mask)
+        else:
+            data_quality = np.array(data_quality)
+            data_quality = data_quality
+            tem_mask = np.where((data_lon >= lon_s) & (data_lon <= lon_e) & (data_lat >= lat_s) & (data_lat <= lat_e) & (data_quality < quality_value), tem_mask+1, tem_mask)
+
+        mask = np.zeros((arr_size,1))
+        #print(tem_mask.shape)
+        mask[:,:] = tem_mask
+        return(mask,data_lon,data_lat)
+
+    def cloudsat_string_info(self):
+        color_step = [1,2,3,4,5,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3]
+        local_ref_time = ['13','12','11','10','09','08','07',
+                          '06','05','04','03','02','01','00',
+                          '23','22','21','20','19','18','17',
+                          '16','15','14']
+        return(color_step,local_ref_time)
     """
     EarthCARE general function 
     """
